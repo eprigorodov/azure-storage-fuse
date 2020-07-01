@@ -141,6 +141,7 @@ struct str_options
     std::string logLevel;
     bool use_https;
     bool use_attr_cache;
+    bool emptyDirCheck;
 };
 
 extern struct str_options str_options;

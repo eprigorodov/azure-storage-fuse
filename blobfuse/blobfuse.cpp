@@ -31,6 +31,7 @@ struct options
     const char *use_attr_cache; // True if the cache for blob attributes should be used.
     const char *version; // print blobfuse version
     const char *help; // print blobfuse usage
+    const char *empty_dir_check; //  Sets whether to check for the emptry temp directory or not
 };
 
 struct options options;
@@ -72,6 +73,7 @@ const struct fuse_opt option_spec[] =
     OPTION("--container-name=%s", container_name),
     OPTION("--log-level=%s", log_level),
     OPTION("--use-attr-cache=%s", use_attr_cache),
+    OPTION("--empty-dir-check=%s", empty_dir_check),
     OPTION("--version", version),
     OPTION("-v", version),
     OPTION("--help", help),
@@ -848,6 +850,15 @@ int read_and_set_arguments(int argc, char *argv[], struct fuse_args *args)
         }
     }
 
+    str_options.emptyDirCheck = false;
+    if (options.empty_dir_check != NULL) {
+        std::string val(options.empty_dir_check);
+        if(val == "true")
+        {
+            str_options.emptyDirCheck = true;
+        }
+    }
+
     if (!tmpPathStr.empty())
     {    
         struct stat sb;
@@ -856,7 +867,8 @@ int read_and_set_arguments(int argc, char *argv[], struct fuse_args *args)
         // so check if the dir exists first and then validate
         if (stat(tmpPathStr.c_str(), &sb) == 0 && S_ISDIR(sb.st_mode)) 
         {             
-            if  (!is_directory_empty(tmpPathStr.c_str()))
+            if  (!is_directory_empty(tmpPathStr.c_str()) &&
+                 str_options.emptyDirCheck)
             {
                 syslog(LOG_CRIT, "Unable to start blobfuse. temp directory '%s'is not empty.", tmpPathStr.c_str());
                 fprintf(stderr, "Error: temp directory '%s' is not empty. blobfuse needs an empty temp directory\n", tmpPathStr.c_str());
